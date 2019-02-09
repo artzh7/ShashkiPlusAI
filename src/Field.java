@@ -60,7 +60,7 @@ public class Field{
         return cells[column][row];
     }
 
-    public Cell cell(int column, int row){
+    Cell cell(int column, int row){
         return cells[column][row];
     }
 
@@ -78,7 +78,7 @@ public class Field{
         else turn = Turn.WHITE;
     }
 
-    private void gameOver() throws FinalMessage{
+    private String gameOver() {
         boolean blackNaMeste = false;
         boolean whiteNaMeste = false;
         for (int i = 0; i < 8; i++){
@@ -101,13 +101,18 @@ public class Field{
         }
 
         if (blackNaMeste && !whiteNaMeste)
-            throw new FinalMessage("Игра окончена! Выиграли черные фигуры");
+            return blackWin;
         else if (whiteNaMeste && !blackNaMeste)
-            throw new FinalMessage("Игра окончена! Выиграли белые фигуры");
+            return whiteWin;
+
+        return null;
     }
 
+    static final String blackWin = "Игра окончена! Выиграли черные фигуры";
+    static final String whiteWin = "Игра окончена! Выиграли черные фигуры";
+
     // может ли фигура бить (учитывается текущий ход)
-    private boolean ableForBeating(Cell cell) throws GameMessage {
+    private boolean ableForBeating(Cell cell) {
 
         if (turn == Turn.WHITE && cell.figure != Figure.WHITE_M && cell.figure != Figure.WHITE_K)
             return false;
@@ -145,18 +150,18 @@ public class Field{
         if (ableForBeating(list)) return true;
 
         return false;
-
     }
 
     // анализ ВОЗМОЖНОСТИ совершить beating ход
     private boolean ableForBeating(List<Cell> cellList){
+        if (cellList == null)
+            return false;
 
         if (cellList.size() <= 2) return false;
         if (cellList.get(0).figure == Figure.WHITE_M || cellList.get(0).figure == Figure.BLACK_M) {
             return ableToBeat(cellList.subList(0, 3));
         }
 
-        boolean f = false;
         for (int i = 1; i < cellList.size()-1; i++){
             if (cellList.get(0).figure == Figure.WHITE_K) {
                 if (cellList.get(i).figure == Figure.WHITE_M || cellList.get(i).figure == Figure.WHITE_K)
@@ -171,11 +176,14 @@ public class Field{
                 }
             }
         }
-        return f;
+        return false;
     }
 
     // анализ КОРРЕКТНОСТИ совершения beating хода
     private boolean ableToBeat(List<Cell> cellList){
+        if (cellList == null)
+            return false;
+
         if (cellList.size() <= 2) return false;
 
         switch (cellList.get(0).figure){
@@ -218,6 +226,8 @@ public class Field{
 
     // анализ КОРРЕКТНОСТИ совершения обычного хода
     private boolean ableToMove(List<Cell> cellList){
+        if (cellList == null)
+            return false;
 
         Cell first = cellList.get(0);
         Cell last = cellList.get(cellList.size()-1);
@@ -270,21 +280,22 @@ public class Field{
         return true;
     }
 
-    private void deleteFigureBetween(Cell cell1, Cell cell2) throws GameMessage {
+    private void deleteFigureBetween(Cell cell1, Cell cell2) {
         List<Cell> temp = listOfCells(cell1, cell2);
+        assert temp != null;
         for (int i = 1; i < temp.size()-1; i++){
             Cell c = temp.get(i);
             cells[c.column][c.row].figure = Figure.MISSING;
         }
     }
 
-    public void move(String pos1, String pos2) throws GameMessage, FinalMessage{
+    public String move(String pos1, String pos2) {
         Cell cell1 = cell(pos1);
         Cell cell2 = cell(pos2);
-        move(cell1, cell2);
+        return move(cell1, cell2);
     }
 
-    void move(Cell cell1, Cell cell2) throws GameMessage, FinalMessage{
+    String move(Cell cell1, Cell cell2) {
 
         boolean mustBeat = false;       // обязан ли игрок бить
         boolean beatingMove = false;    // ход с битьем
@@ -292,7 +303,7 @@ public class Field{
         // если есть фигура, которая должна бить, но ход совершается не ею, то GameMessage
         if (figureThatMustBeat != null){
             if (!figureThatMustBeat.equals(cell1))
-                throw new GameMessage("Нужно бить прошлой фигурой");
+                return "Нужно бить прошлой фигурой";
             else
                 mustBeat = true;
         } // проверяет поле на наличие фигуры (того же цвета, что и совершает ход), которая должна бить
@@ -329,21 +340,21 @@ public class Field{
 
         if (mustBeat && !beatingMove){
             if (figureThatMustBeat != null)
-                throw new GameMessage("Этой фигурой нужно бить, а не ходить");
+                return "Этой фигурой нужно бить, а не ходить";
             else
-                throw new GameMessage("Нужно бить, а не ходить");
+                return "Нужно бить, а не ходить";
         }
                                                         if (!mustBeat && beatingMove)
-                                                            throw new GameMessage("ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ");
+                                                            return "ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ";
         if (!beatingMove && !ableToMove(list))
-            throw new GameMessage("Неверный ход");
+            return "Неверный ход";
 
         if (beatingMove) deleteFigureBetween(cell1, cell2);
         cells[cell2.column][cell2.row].figure = cell1.figure;
         cells[cell1.column][cell1.row].figure = Figure.MISSING;
 
         upgradeMen();
-        gameOver();
+        String totals = gameOver();
 
         // если был ход с битьем, смотрим, нужно ли менять ход
         if (beatingMove){
@@ -354,9 +365,10 @@ public class Field{
             }
         } else changeTurn();
 
+        return totals;
     }
 
-    public boolean randomMove() throws GameMessage, FinalMessage {
+    void randomMove() {
         List<Pair<Cell, Cell>> moves = new ArrayList<>();
         boolean finish = false;
 
@@ -369,15 +381,15 @@ public class Field{
                             continue;
 
                         Field temp = this.copy();
-                        try {
-                            temp.move(temp.cell(column1, row1), temp.cell(column2, row2));
-                        } catch (GameMessage message){
-                            continue;
-                        } catch (FinalMessage message){
-                            finish = true;
-                            break;
+                        String message = temp.move(temp.cell(column1, row1), temp.cell(column2, row2));
+                        if (message != null) {
+                            if (message.equals(blackWin) || message.equals(whiteWin)) {
+                                finish = true;
+                                break;
+                            } else {
+                                continue;
+                            }
                         }
-
                         moves.add(new Pair<>(this.cell(column1, row1), temp.cell(column2, row2)));
                     }
                     if (finish) break;
@@ -392,19 +404,17 @@ public class Field{
             System.out.println(lastMove.getFirst() + " -> " + lastMove.getSecond());
             this.move(lastMove.getFirst(), lastMove.getSecond());
         }
-
-        return true;
     }
 
     // ряд фигур [cell1, cell2]
-    private List<Cell> listOfCells(Cell cell1, Cell cell2) throws GameMessage {
+    private List<Cell> listOfCells(Cell cell1, Cell cell2) {
 
         if (cell1.figure == Figure.MISSING)
-            throw new GameMessage("");
+            return null;
 
         if (cell1.column - cell1.row != cell2.column - cell2.row
                 && cell1.column + cell1.row != cell2.column + cell2.row)
-            throw new GameMessage("Клетки не лежат на одной прямой!");
+            return null;
 
         List<Cell> list = new ArrayList<>();
         int dcolumn = cell2.column - cell1.column;
@@ -430,8 +440,13 @@ public class Field{
             for (int row = 0; row < 8; row++)
                 newCells[column][row] = this.cells[column][row].copy();
 
-        Cell fTMB = this.figureThatMustBeat;
-        Turn turn = this.turn;
+        Cell fTMB;
+        if (this.figureThatMustBeat == null) {
+            fTMB = null;
+        } else {
+            fTMB = this.figureThatMustBeat.copy();
+        }
+        Turn turn = Turn.valueOf(this.turn.toString());
 
         return new Field(newCells, fTMB, turn);
     }
@@ -490,16 +505,19 @@ class Cell{
 
     @Override
     public String toString(){
-        return "(" + column + " " + row + " " + figure + ")";
+        return "(" + this.column + " " + this.row + " " + this.figure + ")";
     }
 
     Cell copy(){
+
         int column = this.column;
         int row = this.row;
-        Figure figure = this.figure;
+        Figure figure = Figure.valueOf(this.figure.toString());
 
         return new Cell(column, row, figure);
     }
+
+
 }
 
 enum Figure{

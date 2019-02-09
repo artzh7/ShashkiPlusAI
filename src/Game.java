@@ -140,14 +140,25 @@ public class Game extends Application {
                         if (first != null && second != null){
                             Cell cell1 = field.cell(first.column, first.row);
                             Cell cell2 = field.cell(second.column, second.row);
-                            try {
-                                field.move(cell1, cell2);
-                                message.setText("");
-                            } catch (FinalMessage finalMessage) {
-                                displayFinal(finalMessage);
-                            } catch (GameMessage gameMessage){
-                                message.setText(gameMessage.getMessage());
-                            }
+
+//                            try {
+//                                field.move(cell1, cell2);
+//                                message.setText("");
+//                            } catch (FinalMessage finalMessage) {
+//                                displayFinal(finalMessage);
+//                            } catch (GameMessage gameMessage){
+//                                message.setText(gameMessage.getMessage());
+//                            }
+
+                            String moveMessage = field.move(cell1, cell2);
+                            if (moveMessage != null) {
+                                if (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin)){
+                                    displayFinal(moveMessage);
+                                } else if (!moveMessage.isEmpty()) {
+                                    message.setText(moveMessage);
+                                }
+                            } else message.setText("");
+
                             first = null;
                             second = null;
                             refresh();
@@ -165,13 +176,14 @@ public class Game extends Application {
         layout.setCenter(center);
 
         if (field.getTurn() != field.getPlayer()){
-            randomMove();
+            field.randomMove();
+            refresh();
         }
     }
 
-    private void displayFinal(FinalMessage finalMessage){
+    private void displayFinal(String finalMessage){
         Stage finalWindow = new Stage();
-        Label text = new Label(finalMessage.getMessage());
+        Label text = new Label(finalMessage);
         text.setAlignment(Pos.TOP_CENTER);
         StackPane layout = new StackPane();
         layout.getChildren().add(text);
@@ -179,39 +191,15 @@ public class Game extends Application {
         finalWindow.show();
     }
 
-    private void randomMove(){
-        try {
-            field.randomMove();
-            // message.setText("");
-        } catch (FinalMessage finalMessage) {
-            displayFinal(finalMessage);
-        } catch (GameMessage gameMessage) {
-            message.setText(gameMessage.getMessage());
-        }
-        refresh();
-    }
-}
-
-class GameMessage extends Exception{
-    private String message;
-    GameMessage(String message){
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-}
-
-class FinalMessage extends Exception{
-    private String message;
-    FinalMessage(String message){
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
+//    private void randomMove(){
+//        String moveMessage = field.randomMove();
+//        if (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin)){
+//            displayFinal(moveMessage);
+//        } else if (!moveMessage.isEmpty()) {
+//            message.setText(moveMessage);
+//        }
+//        refresh();
+//    }
 }
 
 class PlayerWindow{
