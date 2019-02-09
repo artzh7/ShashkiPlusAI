@@ -1,3 +1,5 @@
+import kotlin.Pair;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -6,6 +8,7 @@ public class Field{
     private Cell[][] cells = new Cell[8][8];
     private Cell figureThatMustBeat;
     private Turn turn = Turn.WHITE;
+    private Turn player = Turn.WHITE;
 
     Field(){
         for (int column = 0; column < 8; column++){
@@ -13,6 +16,12 @@ public class Field{
                 cells[column][row] = new Cell(column, row);
             }
         }
+    }
+
+    private Field(Cell[][] cells, Cell fTMB, Turn turn){
+        System.arraycopy(cells, 0, this.cells, 0, 8);
+        this.figureThatMustBeat = fTMB;
+        this.turn = turn;
     }
 
     @Override
@@ -347,15 +356,55 @@ public class Field{
 
     }
 
+    public boolean randomMove() throws GameMessage, FinalMessage {
+        List<Pair<Cell, Cell>> moves = new ArrayList<>();
+        boolean finish = false;
+
+        for (int row1 = 0; row1 < 8; row1++){
+            for (int column1 = 0; column1 < 8; column1++){
+                for (int row2 = 0; row2 < 8; row2++){
+                    for (int column2 = 0; column2 < 8; column2++){
+
+                        if ((row1+column1)%2 != 0 || (row2+column2)%2 != 0)
+                            continue;
+
+                        Field temp = this.copy();
+                        try {
+                            temp.move(temp.cell(column1, row1), temp.cell(column2, row2));
+                        } catch (GameMessage message){
+                            continue;
+                        } catch (FinalMessage message){
+                            finish = true;
+                            break;
+                        }
+
+                        moves.add(new Pair<>(this.cell(column1, row1), temp.cell(column2, row2)));
+                    }
+                    if (finish) break;
+                }
+                if (finish) break;
+            }
+            if (finish) break;
+        }
+
+        if (!moves.isEmpty()) {
+            Pair<Cell, Cell> lastMove = moves.get(moves.size() - 1);
+            System.out.println(lastMove.getFirst() + " -> " + lastMove.getSecond());
+            this.move(lastMove.getFirst(), lastMove.getSecond());
+        }
+
+        return true;
+    }
+
     // ряд фигур [cell1, cell2]
     private List<Cell> listOfCells(Cell cell1, Cell cell2) throws GameMessage {
+
+        if (cell1.figure == Figure.MISSING)
+            throw new GameMessage("");
 
         if (cell1.column - cell1.row != cell2.column - cell2.row
                 && cell1.column + cell1.row != cell2.column + cell2.row)
             throw new GameMessage("Клетки не лежат на одной прямой!");
-
-        if (cell1.figure == Figure.MISSING)
-            throw new GameMessage("Что-то пошло не так?");
 
         List<Cell> list = new ArrayList<>();
         int dcolumn = cell2.column - cell1.column;
@@ -373,8 +422,26 @@ public class Field{
         return list;
     }
 
-    public void setTurn(Turn turn) {
-        this.turn = turn;
+    private Field copy(){
+
+        Cell[][] newCells = new Cell[8][8];
+        // System.arraycopy(this.cells, 0, newCells, 0, 8);
+        for (int column = 0; column < 8; column++)
+            for (int row = 0; row < 8; row++)
+                newCells[column][row] = this.cells[column][row].copy();
+
+        Cell fTMB = this.figureThatMustBeat;
+        Turn turn = this.turn;
+
+        return new Field(newCells, fTMB, turn);
+    }
+
+    public void setPlayer(Turn player) {
+        this.player = player;
+    }
+
+    public Turn getPlayer() {
+        return player;
     }
 
     public Turn getTurn() {
@@ -405,6 +472,12 @@ class Cell{
         }
     }
 
+    private Cell(int column, int row, Figure figure){
+        this.column = column;
+        this.row = row;
+        this.figure = figure;
+    }
+
     @Override
     public boolean equals(Object obj){
         if (obj == this) return true;
@@ -418,6 +491,14 @@ class Cell{
     @Override
     public String toString(){
         return "(" + column + " " + row + " " + figure + ")";
+    }
+
+    Cell copy(){
+        int column = this.column;
+        int row = this.row;
+        Figure figure = this.figure;
+
+        return new Cell(column, row, figure);
     }
 }
 

@@ -56,9 +56,9 @@ public class Game extends Application {
         // bottom - вывод сообщения GameMessage
         // center - само поле GridPane
 
-        field.setTurn(FirstTurnWindow.display());   // окно с выбором первого хода
+        field.setPlayer(PlayerWindow.display());   // окно с выбором цвета фигур
 
-        HBox top = new HBox(120);
+        HBox top = new HBox(10);
         top.setPadding(new Insets(15,15,5,15));
         HBox bottom = new HBox(10);
         bottom.setPadding(new Insets(0,10,10,10));
@@ -72,7 +72,6 @@ public class Game extends Application {
         refresh();
 
         Button newGame = new Button("Новая игра");
-        newGame.setAlignment(Pos.TOP_LEFT);
         top.getChildren().addAll(newGame, turnLabel);
 
         message = new Label();
@@ -85,8 +84,10 @@ public class Game extends Application {
 
         newGame.setOnMouseClicked(e -> {
             fieldWindow.close();
+            first = null;
+            second = null;
             field = new Field();
-            field.setTurn(FirstTurnWindow.display());
+            field.setPlayer(PlayerWindow.display());
             refresh();
             fieldWindow.show();
         });
@@ -94,20 +95,24 @@ public class Game extends Application {
 
     // перерисовка всей сцены
     private void refresh(){
+
         center = new GridPane();
         center.setPadding(new Insets(10));
         if (field.getTurn() == Turn.WHITE)
-            turnLabel.setText("Ходят белые фигуры");
-        else turnLabel.setText("Ходят черные фигуры");
+            turnLabel.setText("                  Ходят белые фигуры");
+        else turnLabel.setText("                  Ходят черные фигуры");
 
         Cell2D[][] cells2D = new Cell2D[8][8];
 
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
+
                 int column = i;
                 int row = j;
                 cells2D[i][j] = new Cell2D(i, j);
+
                 if ((i+j)%2 == 0){
+
                     switch (field.cell(i,j).figure){
                         case WHITE_M:
                             cells2D[i][j].cell.setImage(white_ch);
@@ -125,6 +130,7 @@ public class Game extends Application {
                             cells2D[i][j].cell.setImage(missing);
                             break;
                     }
+
                     cells2D[i][j].cell.setOnMouseClicked(e -> {
                         cells2D[column][row].cell.setEffect(new InnerShadow(10, Color.RED));
                         if (first == null)
@@ -138,31 +144,51 @@ public class Game extends Application {
                                 field.move(cell1, cell2);
                                 message.setText("");
                             } catch (FinalMessage finalMessage) {
-
-                                Stage finalWindow = new Stage();
-                                Label text = new Label(finalMessage.getMessage());
-                                text.setAlignment(Pos.TOP_CENTER);
-                                StackPane layout = new StackPane();
-                                layout.getChildren().add(text);
-                                finalWindow.setScene(new Scene(layout, 270, 40));
-                                finalWindow.show();
-
+                                displayFinal(finalMessage);
                             } catch (GameMessage gameMessage){
                                 message.setText(gameMessage.getMessage());
                             }
-                            refresh();
                             first = null;
                             second = null;
+                            refresh();
                         }
                     });
                 }
-                else
+                else {
                     cells2D[i][j].cell.setImage(emptycell);
+                }
+
                 GridPane.setConstraints(cells2D[i][j].cell, i, 7-j);
                 center.getChildren().addAll(cells2D[i][j].cell);
             }
         }
         layout.setCenter(center);
+
+        if (field.getTurn() != field.getPlayer()){
+            randomMove();
+        }
+    }
+
+    private void displayFinal(FinalMessage finalMessage){
+        Stage finalWindow = new Stage();
+        Label text = new Label(finalMessage.getMessage());
+        text.setAlignment(Pos.TOP_CENTER);
+        StackPane layout = new StackPane();
+        layout.getChildren().add(text);
+        finalWindow.setScene(new Scene(layout, 270, 40));
+        finalWindow.show();
+    }
+
+    private void randomMove(){
+        try {
+            field.randomMove();
+            // message.setText("");
+        } catch (FinalMessage finalMessage) {
+            displayFinal(finalMessage);
+        } catch (GameMessage gameMessage) {
+            message.setText(gameMessage.getMessage());
+        }
+        refresh();
     }
 }
 
@@ -188,9 +214,9 @@ class FinalMessage extends Exception{
     }
 }
 
-class FirstTurnWindow{
+class PlayerWindow{
 
-    private static Turn turn = Turn.WHITE;
+    private static Turn player = Turn.WHITE;
 
     static Turn display() {
 
@@ -199,12 +225,12 @@ class FirstTurnWindow{
 
         Button buttonW = new Button("Белые");
         buttonW.setOnAction(e -> {
-            turn = Turn.WHITE;
+            player = Turn.WHITE;
             window.close();
         });
         Button buttonB = new Button("Черные");
         buttonB.setOnAction(e -> {
-            turn = Turn.BLACK;
+            player = Turn.BLACK;
             window.close();
         });
 
@@ -214,7 +240,7 @@ class FirstTurnWindow{
         center.setAlignment(Pos.TOP_CENTER);
 
         HBox top = new HBox(10);
-        Label text = new Label("Кто ходит первым?");
+        Label text = new Label("Ваши шашки");
         top.setPadding(new Insets(10, 0,0,0));
         top.getChildren().add(text);
         top.setAlignment(Pos.TOP_CENTER);
@@ -225,7 +251,7 @@ class FirstTurnWindow{
         window.setScene(new Scene(layout, 200, 75));
         window.showAndWait();
 
-        return turn;
+        return player;
     }
 }
 
