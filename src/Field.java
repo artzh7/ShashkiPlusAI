@@ -7,8 +7,9 @@ public class Field{
 
     private Cell[][] cells = new Cell[8][8];
     private Cell figureThatMustBeat;
-    private Turn turn = Turn.WHITE;
-    private Turn player = Turn.WHITE;
+    private Turn turn = Turn.WHITE;     // текущий ход
+    private Turn player;   // цвет фигур игрока
+    private boolean gameOver = false;
 
     Field(){
         for (int column = 0; column < 8; column++){
@@ -21,7 +22,7 @@ public class Field{
     private Field(Cell[][] cells, Cell fTMB, Turn turn){
         System.arraycopy(cells, 0, this.cells, 0, 8);
         this.figureThatMustBeat = fTMB;
-        this.turn = turn;
+        this.turn = Turn.valueOf(turn.toString());
     }
 
     @Override
@@ -141,25 +142,29 @@ public class Field{
         }
 
         list = listOfCells(cell, mainTop);
-        if (ableForBeating(list)) return true;
+        if (ableForBeating(list, Control.DIAGONAL)) return true;
         list = listOfCells(cell, sideBottom);
-        if (ableForBeating(list)) return true;
+        if (ableForBeating(list, Control.DIAGONAL)) return true;
         list = listOfCells(cell, mainBottom);
-        if (ableForBeating(list)) return true;
+        if (ableForBeating(list, Control.DIAGONAL)) return true;
         list = listOfCells(cell, sideTop);
-        if (ableForBeating(list)) return true;
+        if (ableForBeating(list, Control.DIAGONAL)) return true;
 
         return false;
     }
 
     // анализ ВОЗМОЖНОСТИ совершить beating ход
-    private boolean ableForBeating(List<Cell> cellList){
+    private boolean ableForBeating(List<Cell> cellList, Control control){
         if (cellList == null)
             return false;
 
         if (cellList.size() <= 2) return false;
         if (cellList.get(0).figure == Figure.WHITE_M || cellList.get(0).figure == Figure.BLACK_M) {
-            return ableToBeat(cellList.subList(0, 3));
+            if (control == Control.DIAGONAL) {
+                return ableToBeat(cellList.subList(0, 3));
+            } else {
+                return ableToBeat(cellList);
+            }
         }
 
         for (int i = 1; i < cellList.size()-1; i++){
@@ -177,6 +182,10 @@ public class Field{
             }
         }
         return false;
+    }
+
+    enum Control {
+        DEFAULT, DIAGONAL
     }
 
     // анализ КОРРЕКТНОСТИ совершения beating хода
@@ -335,7 +344,7 @@ public class Field{
         }
 
         List<Cell> list = listOfCells(cell1, cell2);
-        if (ableForBeating(list))
+        if (ableForBeating(list, Control.DEFAULT))
             beatingMove = true;
 
         if (mustBeat && !beatingMove){
@@ -400,7 +409,8 @@ public class Field{
         }
 
         if (!moves.isEmpty()) {
-            Pair<Cell, Cell> lastMove = moves.get(moves.size() - 1);
+            int i = (int) (Math.random() * moves.size());
+            Pair<Cell, Cell> lastMove = moves.get(i);
             System.out.println(lastMove.getFirst() + " -> " + lastMove.getSecond());
             this.move(lastMove.getFirst(), lastMove.getSecond());
         }
@@ -461,6 +471,14 @@ public class Field{
 
     public Turn getTurn() {
         return turn;
+    }
+
+    public boolean gameIsOver() {
+        return gameOver;
+    }
+
+    public void setGameOver(boolean b) {
+        gameOver = b;
     }
 }
 
