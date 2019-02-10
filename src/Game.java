@@ -190,6 +190,7 @@ public class Game extends Application {
         }
         layout.setCenter(center);
 
+        // ------> рандомный ход (to be continued) <------
         String moveMessage;
         if (field.getTurn() != field.getPlayer() && !field.gameIsOver()){
             moveMessage = field.randomMove();
@@ -201,6 +202,7 @@ public class Game extends Application {
         }
     }
 
+    // окно с информацией о чьей-то победе
     private void displayFinal(String finalMessage){
         Stage finalWindow = new Stage();
         Label text = new Label(finalMessage);

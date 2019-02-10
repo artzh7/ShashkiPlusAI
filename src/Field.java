@@ -7,9 +7,9 @@ public class Field{
 
     private Cell[][] cells = new Cell[8][8];
     private Cell figureThatMustBeat;
-    private Turn turn = Turn.WHITE;     // текущий ход
-    private Turn player;   // цвет фигур игрока
-    private boolean gameOver = false;
+    private Turn turn = Turn.WHITE;             // текущий ход
+    private Turn player;                        // цвет фигур игрока
+    private boolean gameOver = false;           // для вывода окна окончания игры / чтобы рандомный ход не задумывался над последним шагом
 
     Field(){
         for (int column = 0; column < 8; column++){
@@ -19,7 +19,7 @@ public class Field{
         }
     }
 
-    private Field(Cell[][] cells, Cell fTMB, Turn turn){
+    private Field(Cell[][] cells, Cell fTMB, Turn turn){    // используется при копировании поля
         System.arraycopy(cells, 0, this.cells, 0, 8);
         this.figureThatMustBeat = fTMB;
         this.turn = Turn.valueOf(turn.toString());
@@ -65,7 +65,7 @@ public class Field{
         return cells[column][row];
     }
 
-    private void upgradeMen(){
+    private void upgradeMen(){  // шашки в дамки
         for (int column = 0; column < 8; column++){
             if (cells[column][7].figure == Figure.WHITE_M)
                 cells[column][7].figure = Figure.WHITE_K;
@@ -79,7 +79,8 @@ public class Field{
         else turn = Turn.WHITE;
     }
 
-    private String gameOver() {
+    private String gameOver() { // проверка на окончание игры
+                // требует доработки: игра может быть закончена и тогда, когда фигуры не могут двигаться
         boolean blackNaMeste = false;
         boolean whiteNaMeste = false;
         for (int i = 0; i < 8; i++){
@@ -112,7 +113,7 @@ public class Field{
     static final String blackWin = "Игра окончена! Выиграли черные фигуры";
     static final String whiteWin = "Игра окончена! Выиграли черные фигуры";
 
-    // может ли фигура бить (учитывается текущий ход)
+    // может ли фигура бить
     private boolean ableForBeating(Cell cell) {
 
         if (turn == Turn.WHITE && cell.figure != Figure.WHITE_M && cell.figure != Figure.WHITE_K)
@@ -153,7 +154,10 @@ public class Field{
         return false;
     }
 
-    // анализ ВОЗМОЖНОСТИ совершить beating ход
+    // может ли фигура бить на участке [cell1 : cell2]
+    // control:
+    //      default - проверка обычного битья
+    //      diagonal - используется при проверке потенциального битья по одной из диагоналей
     private boolean ableForBeating(List<Cell> cellList, Control control){
         if (cellList == null)
             return false;
@@ -188,7 +192,7 @@ public class Field{
         DEFAULT, DIAGONAL
     }
 
-    // анализ КОРРЕКТНОСТИ совершения beating хода
+    // может ли фигура бить корректно на участке [cell1 : cell2]
     private boolean ableToBeat(List<Cell> cellList){
         if (cellList == null)
             return false;
@@ -233,7 +237,7 @@ public class Field{
         return false;
     }
 
-    // анализ КОРРЕКТНОСТИ совершения обычного хода
+    // может ли фигура корректно совершить безобидный ход
     private boolean ableToMove(List<Cell> cellList){
         if (cellList == null)
             return false;
@@ -289,6 +293,7 @@ public class Field{
         return true;
     }
 
+    // удаление фигур на участке (cell1 : cell2) не включительно
     private void deleteFigureBetween(Cell cell1, Cell cell2) {
         List<Cell> temp = listOfCells(cell1, cell2);
         assert temp != null;
@@ -304,18 +309,24 @@ public class Field{
         return move(cell1, cell2);
     }
 
+    // совершение любого действия фигурой
+    // (в идеале) возвращает:
+    //      пустую строку в случае удачного действия
+    //      blackWin / whiteWin в случае завершающего игру хода
+    //      пояснение в случае неудачного действия
     String move(Cell cell1, Cell cell2) {
 
         boolean mustBeat = false;       // обязан ли игрок бить
         boolean beatingMove = false;    // ход с битьем
 
-        // если есть фигура, которая должна бить, но ход совершается не ею, то GameMessage
+        // если есть фигура, которая должна бить, но действие совершается не ею - возвращает строку
         if (figureThatMustBeat != null){
             if (!figureThatMustBeat.equals(cell1))
                 return "Нужно бить прошлой фигурой";
             else
                 mustBeat = true;
-        } // проверяет поле на наличие фигуры (того же цвета, что и совершает ход), которая должна бить
+        } // проверяет поле на наличие фигуры (того же цвета, что и совершает ход)
+          // которая обязана совершить ход с битьем (теоретически: "иначе ее возьмут за фук")
         else switch (turn){
             case WHITE:
                 for (int i = 0; i < 8; i++){
@@ -343,22 +354,22 @@ public class Field{
                 break;
         }
 
-        List<Cell> list = listOfCells(cell1, cell2);
-        if (ableForBeating(list, Control.DEFAULT))
+        List<Cell> list = listOfCells(cell1, cell2);    // шашки между [cell1:cell2]
+        if (ableForBeating(list, Control.DEFAULT))      // если ход с битьем
             beatingMove = true;
 
-        if (mustBeat && !beatingMove){
+        if (mustBeat && !beatingMove){  // игрок может бить ТЕОРЕТИЧЕСКИ, но не бьет
             if (figureThatMustBeat != null)
                 return "Этой фигурой нужно бить, а не ходить";
             else
                 return "Нужно бить, а не ходить";
         }
-                                                        if (!mustBeat && beatingMove)
-                                                            return "ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ";
-        if (!beatingMove && !ableToMove(list))
+        if (!mustBeat && beatingMove)   // игрок не может сходить битьем ТЕОРЕТИЧЕСКИ, но бьет ПРАКТИЧЕСКИ
+            return "ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ";
+        if (!beatingMove && !ableToMove(list))  // игрок не бьет, но ходит некорректно
             return "Неверный ход";
 
-        if (beatingMove) deleteFigureBetween(cell1, cell2);
+        if (beatingMove) deleteFigureBetween(cell1, cell2);     // все проверки пройдены, смахиваем фигуру с поля
         cells[cell2.column][cell2.row].figure = cell1.figure;
         cells[cell1.column][cell1.row].figure = Figure.MISSING;
 
@@ -377,6 +388,7 @@ public class Field{
         return totals;
     }
 
+    // совершает случайный ход
     String randomMove() {
         List<Pair<Cell, Cell>> moves = new ArrayList<>();
         boolean finish = false;
@@ -549,11 +561,11 @@ class Cell{
 }
 
 enum Figure{
-    WHITE_M,
-    BLACK_M,
-    WHITE_K,
-    BLACK_K,
-    MISSING
+    WHITE_M,    // белая шашка
+    BLACK_M,    // черная шашка
+    WHITE_K,    // белая дамка
+    BLACK_K,    // черная дамка
+    MISSING     // клетку никто не занимает
 }
 
 enum Turn{
