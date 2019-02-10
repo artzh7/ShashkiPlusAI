@@ -377,7 +377,7 @@ public class Field{
         return totals;
     }
 
-    void randomMove() {
+    String randomMove() {
         List<Pair<Cell, Cell>> moves = new ArrayList<>();
         boolean finish = false;
 
@@ -393,6 +393,8 @@ public class Field{
                         String message = temp.move(temp.cell(column1, row1), temp.cell(column2, row2));
                         if (message != null) {
                             if (message.equals(blackWin) || message.equals(whiteWin)) {
+                                moves = new ArrayList<>();
+                                moves.add(new Pair<>(this.cell(column1, row1), temp.cell(column2, row2)));
                                 finish = true;
                                 break;
                             } else {
@@ -411,9 +413,11 @@ public class Field{
         if (!moves.isEmpty()) {
             int i = (int) (Math.random() * moves.size());
             Pair<Cell, Cell> lastMove = moves.get(i);
-            System.out.println(lastMove.getFirst() + " -> " + lastMove.getSecond());
-            this.move(lastMove.getFirst(), lastMove.getSecond());
+            System.out.println(lastMove.getFirst().pos() + " -> " + lastMove.getSecond().pos());
+            return this.move(lastMove.getFirst(), lastMove.getSecond());
         }
+
+        return "";
     }
 
     // ряд фигур [cell1, cell2]
@@ -524,6 +528,12 @@ class Cell{
     @Override
     public String toString(){
         return "(" + this.column + " " + this.row + " " + this.figure + ")";
+    }
+
+    public String pos(){
+        char c1 = (char) (this.column + 65);
+        String c2 = Integer.toString(this.row + 1);
+        return c1 + c2;
     }
 
     Cell copy(){

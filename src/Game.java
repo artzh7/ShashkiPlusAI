@@ -80,12 +80,18 @@ public class Game extends Application {
 
         fieldWindow = new Stage();
         fieldWindow.setScene(new Scene(layout,420, 500));
+        fieldWindow.setMaxHeight(560);
+        fieldWindow.setMaxWidth(475);
+        fieldWindow.setMinHeight(560);
+        fieldWindow.setMinWidth(475);
         fieldWindow.show();
 
         newGame.setOnMouseClicked(e -> {
+            System.out.println("_________________");
             fieldWindow.close();
             first = null;
             second = null;
+            message = new Label();
             field = new Field();
             field.setPlayer(PlayerWindow.display());
             refresh();
@@ -97,6 +103,8 @@ public class Game extends Application {
     private void refresh(){
 
         center = new GridPane();
+        center.setHgap(1);
+        center.setVgap(1);
         center.setPadding(new Insets(10));
         if (field.getTurn() == Turn.WHITE)
             turnLabel.setText("                  Ходят белые фигуры");
@@ -163,14 +171,32 @@ public class Game extends Application {
                     cells2D[i][j].cell.setImage(emptycell);
                 }
 
-                GridPane.setConstraints(cells2D[i][j].cell, i, 7-j);
+                GridPane.setConstraints(cells2D[i][j].cell, i+1, 8-j);
+                for (int k = 8; k >= 1; k--){
+                    Label index = new Label(Integer.toString(k) + "  ");
+                    index.setAlignment(Pos.TOP_CENTER);
+                    GridPane.setConstraints(index, 0, 9-k);
+                    center.getChildren().add(index);
+                }
+                for (int k = 1; k <= 8; k++){
+                    Character c = (char) (k + 64);
+                    Label index = new Label("       " + c.toString());
+                    index.setAlignment(Pos.TOP_CENTER);
+                    GridPane.setConstraints(index, k, 9);
+                    center.getChildren().add(index);
+                }
                 center.getChildren().addAll(cells2D[i][j].cell);
             }
         }
         layout.setCenter(center);
 
+        String moveMessage;
         if (field.getTurn() != field.getPlayer() && !field.gameIsOver()){
-            field.randomMove();
+            moveMessage = field.randomMove();
+            if (moveMessage != null && (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin))) {
+                field.setGameOver(true);
+                displayFinal(moveMessage);
+            }
             refresh();
         }
     }
