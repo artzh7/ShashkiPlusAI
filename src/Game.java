@@ -150,9 +150,12 @@ public class Game extends Application {
 //                                message.setText(gameMessage.getMessage());
 //                            }
 
-                            String moveMessage = field.move(cell1, cell2);
+                            String moveMessage = null;
+                            if (!field.gameIsOver())
+                                 moveMessage = field.move(cell1, cell2);
                             if (moveMessage != null) {
                                 if (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin)){
+                                    field.setGameOver(true);
                                     displayFinal(moveMessage);
                                 } else if (!moveMessage.isEmpty()) {
                                     message.setText(moveMessage);
@@ -175,7 +178,7 @@ public class Game extends Application {
         }
         layout.setCenter(center);
 
-        if (field.getTurn() != field.getPlayer()){
+        if (field.getTurn() != field.getPlayer() && !field.gameIsOver()){
             field.randomMove();
             refresh();
         }
@@ -190,16 +193,6 @@ public class Game extends Application {
         finalWindow.setScene(new Scene(layout, 270, 40));
         finalWindow.show();
     }
-
-//    private void randomMove(){
-//        String moveMessage = field.randomMove();
-//        if (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin)){
-//            displayFinal(moveMessage);
-//        } else if (!moveMessage.isEmpty()) {
-//            message.setText(moveMessage);
-//        }
-//        refresh();
-//    }
 }
 
 class PlayerWindow{
