@@ -198,10 +198,10 @@ public class Field{
         switch (cellList.get(0).figure){
             case WHITE_M:
                 return (cellList.get(1).figure == Figure.BLACK_M || cellList.get(1).figure == Figure.BLACK_K)
-                        && cellList.get(2).figure == Figure.MISSING && cellList.size() == 3;
+                        && cellList.get(2).figure == Figure.MISSING && cellList.size() == 3 && turn == Turn.WHITE;
             case BLACK_M:
                 return (cellList.get(1).figure == Figure.WHITE_M || cellList.get(1).figure == Figure.WHITE_K)
-                        && cellList.get(2).figure == Figure.MISSING && cellList.size() == 3;
+                        && cellList.get(2).figure == Figure.MISSING && cellList.size() == 3 && turn == Turn.BLACK;
         }
 
         boolean f;

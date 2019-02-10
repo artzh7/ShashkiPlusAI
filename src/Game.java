@@ -141,15 +141,6 @@ public class Game extends Application {
                             Cell cell1 = field.cell(first.column, first.row);
                             Cell cell2 = field.cell(second.column, second.row);
 
-//                            try {
-//                                field.move(cell1, cell2);
-//                                message.setText("");
-//                            } catch (FinalMessage finalMessage) {
-//                                displayFinal(finalMessage);
-//                            } catch (GameMessage gameMessage){
-//                                message.setText(gameMessage.getMessage());
-//                            }
-
                             String moveMessage = null;
                             if (!field.gameIsOver())
                                  moveMessage = field.move(cell1, cell2);
