@@ -154,10 +154,10 @@ public class Game extends Application {
                                  moveMessage = field.move(cell1, cell2);
                             if (moveMessage != null) {
                                 if (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin)){
-                                    field.setGameOver(true);
+                                    field.setGameOver();
                                     displayFinal(moveMessage);
                                 } else if (!moveMessage.isEmpty()) {
-                                    message.setText(moveMessage);
+                                    message.setText("");
                                 }
                             } else message.setText("");
 
@@ -193,9 +193,10 @@ public class Game extends Application {
         // ------> рандомный ход (to be continued) <------
         String moveMessage;
         if (field.getTurn() != field.getPlayer() && !field.gameIsOver()){
-            moveMessage = field.randomMove();
+            Bot bot = new Bot(field, 2);
+            moveMessage = bot.randomMove(field);
             if (moveMessage != null && (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin))) {
-                field.setGameOver(true);
+                field.setGameOver();
                 displayFinal(moveMessage);
             }
             refresh();

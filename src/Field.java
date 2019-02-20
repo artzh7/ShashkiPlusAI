@@ -1,5 +1,3 @@
-import kotlin.Pair;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -388,50 +386,6 @@ public class Field{
         return totals;
     }
 
-    // совершает случайный ход
-    String randomMove() {
-        List<Pair<Cell, Cell>> moves = new ArrayList<>();
-        boolean finish = false;
-
-        for (int row1 = 0; row1 < 8; row1++){
-            for (int column1 = 0; column1 < 8; column1++){
-                for (int row2 = 0; row2 < 8; row2++){
-                    for (int column2 = 0; column2 < 8; column2++){
-
-                        if ((row1+column1)%2 != 0 || (row2+column2)%2 != 0)
-                            continue;
-
-                        Field temp = this.copy();
-                        String message = temp.move(temp.cell(column1, row1), temp.cell(column2, row2));
-                        if (message != null) {
-                            if (message.equals(blackWin) || message.equals(whiteWin)) {
-                                moves = new ArrayList<>();
-                                moves.add(new Pair<>(this.cell(column1, row1), temp.cell(column2, row2)));
-                                finish = true;
-                                break;
-                            } else {
-                                continue;
-                            }
-                        }
-                        moves.add(new Pair<>(this.cell(column1, row1), temp.cell(column2, row2)));
-                    }
-                    if (finish) break;
-                }
-                if (finish) break;
-            }
-            if (finish) break;
-        }
-
-        if (!moves.isEmpty()) {
-            int i = (int) (Math.random() * moves.size());
-            Pair<Cell, Cell> lastMove = moves.get(i);
-            System.out.println(lastMove.getFirst().pos() + " -> " + lastMove.getSecond().pos());
-            return this.move(lastMove.getFirst(), lastMove.getSecond());
-        }
-
-        return "";
-    }
-
     // ряд фигур [cell1, cell2]
     private List<Cell> listOfCells(Cell cell1, Cell cell2) {
 
@@ -458,7 +412,7 @@ public class Field{
         return list;
     }
 
-    private Field copy(){
+    Field copy(){
 
         Cell[][] newCells = new Cell[8][8];
         // System.arraycopy(this.cells, 0, newCells, 0, 8);
@@ -477,31 +431,31 @@ public class Field{
         return new Field(newCells, fTMB, turn);
     }
 
-    public void setPlayer(Turn player) {
+    void setPlayer(Turn player) {
         this.player = player;
     }
 
-    public Turn getPlayer() {
+    Turn getPlayer() {
         return player;
     }
 
-    public Turn getTurn() {
+    Turn getTurn() {
         return turn;
     }
 
-    public boolean gameIsOver() {
+    boolean gameIsOver() {
         return gameOver;
     }
 
-    public void setGameOver(boolean b) {
-        gameOver = b;
+    void setGameOver() {
+        gameOver = true;
     }
 }
 
 class Cell{
 
-    int column;
-    int row;
+    final int column;
+    final int row;
     Figure figure;
 
     Cell(int column, int row){
@@ -542,7 +496,7 @@ class Cell{
         return "(" + this.column + " " + this.row + " " + this.figure + ")";
     }
 
-    public String pos(){
+    String pos(){
         char c1 = (char) (this.column + 65);
         String c2 = Integer.toString(this.row + 1);
         return c1 + c2;
