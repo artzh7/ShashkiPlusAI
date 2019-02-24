@@ -117,13 +117,10 @@ public class Field{
     static final String blackWin = "Игра окончена! Выиграли черные фигуры";
     static final String whiteWin = "Игра окончена! Выиграли белые фигуры";
 
-    // может ли фигура бить
     private boolean ableForBeating(Cell cell) {
 
-        if (turn == Turn.WHITE && cell.figure != Figure.WHITE_M && cell.figure != Figure.WHITE_K)
-            return false;
-        else if (turn == Turn.BLACK && cell.figure != Figure.BLACK_M && cell.figure != Figure.BLACK_K)
-            return false;
+        if (turn == Turn.WHITE && cell.figure != Figure.WHITE_M && cell.figure != Figure.WHITE_K) return false;
+        else if (turn == Turn.BLACK && cell.figure != Figure.BLACK_M && cell.figure != Figure.BLACK_K) return false;
 
         int dmain = cell.column - cell.row;
         int dside = cell.column + cell.row;
@@ -158,36 +155,18 @@ public class Field{
         return false;
     }
 
-    // может ли фигура бить на участке [cell1 : cell2]
-    // control:
-    //      default - проверка обычного битья
-    //      diagonal - используется при проверке потенциального битья по одной из диагоналей
     private boolean ableForBeating(List<Cell> cellList, Control control){
-        if (cellList == null)
-            return false;
 
+        if (cellList == null) return false;
         if (cellList.size() <= 2) return false;
+
         if (cellList.get(0).figure == Figure.WHITE_M || cellList.get(0).figure == Figure.BLACK_M) {
-            if (control == Control.DIAGONAL) {
-                return ableToBeat(cellList.subList(0, 3));
-            } else {
-                return ableToBeat(cellList);
-            }
+            if (control == Control.DIAGONAL) return ableToBeat(cellList.subList(0, 3));
+            else return ableToBeat(cellList);
         }
 
-        for (int i = 1; i < cellList.size()-1; i++){
-            if (cellList.get(0).figure == Figure.WHITE_K) {
-                if (cellList.get(i).figure == Figure.WHITE_M || cellList.get(i).figure == Figure.WHITE_K)
-                    return false;
-                if (cellList.get(i).figure == Figure.BLACK_M || cellList.get(i).figure == Figure.BLACK_K)
-                    return cellList.get(i + 1).figure == Figure.MISSING;
-            } else if (cellList.get(0).figure == Figure.BLACK_K) {
-                if (cellList.get(i).figure == Figure.BLACK_M || cellList.get(i).figure == Figure.BLACK_K)
-                    return false;
-                if (cellList.get(i).figure == Figure.WHITE_M || cellList.get(i).figure == Figure.WHITE_K) {
-                    return cellList.get(i + 1).figure == Figure.MISSING;
-                }
-            }
+        for (int i = 3; i <= cellList.size(); i++){
+            if (ableToBeat(cellList.subList(0, i))) return true;
         }
         return false;
     }
@@ -196,108 +175,85 @@ public class Field{
         DEFAULT, DIAGONAL
     }
 
-    // может ли фигура бить корректно на участке [cell1 : cell2]
     private boolean ableToBeat(List<Cell> cellList){
-        if (cellList == null)
-            return false;
 
+        if (cellList == null) return false;
         if (cellList.size() <= 2) return false;
+        if (cellList.get(cellList.size()-1).figure != Figure.MISSING) return false;
 
         switch (cellList.get(0).figure){
             case WHITE_M:
                 return (cellList.get(1).figure == Figure.BLACK_M || cellList.get(1).figure == Figure.BLACK_K)
-                        && cellList.get(2).figure == Figure.MISSING && cellList.size() == 3 && turn == Turn.WHITE;
+                        && cellList.size() == 3
+                        && turn == Turn.WHITE;
             case BLACK_M:
                 return (cellList.get(1).figure == Figure.WHITE_M || cellList.get(1).figure == Figure.WHITE_K)
-                        && cellList.get(2).figure == Figure.MISSING && cellList.size() == 3 && turn == Turn.BLACK;
+                        && cellList.size() == 3
+                        && turn == Turn.BLACK;
         }
 
-        boolean f;
+        for (int i = 1; i < cellList.size()-1; i++) {
+            if (cellList.get(i).figure != Figure.MISSING && cellList.get(i+1).figure != Figure.MISSING)
+                return false;
+        }
+
+        boolean able = false;
         switch (cellList.get(0).figure){
             case WHITE_K:
-                f = false;
                 for (int i = 1; i < cellList.size()-1; i++){
-                    if (cellList.get(i).figure == Figure.WHITE_M || cellList.get(i).figure == Figure.WHITE_K)
-                        return false;
-                    if (cellList.get(i).figure == Figure.BLACK_M || cellList.get(i).figure == Figure.BLACK_K){
-                        if (!f) f = true;
-                        else return false;
-                    }
+                    if (cellList.get(i).figure != Figure.WHITE_M && cellList.get(i).figure != Figure.WHITE_K)
+                        able = true;
+                    else return false;
                 }
-                return f;
+                break;
             case BLACK_K:
-                f = false;
                 for (int i = 1; i < cellList.size()-1; i++){
-                    if (cellList.get(i).figure == Figure.BLACK_M || cellList.get(i).figure == Figure.BLACK_K)
-                        return false;
-                    if (cellList.get(i).figure == Figure.WHITE_M || cellList.get(i).figure == Figure.WHITE_K){
-                        if (!f) f = true;
-                        else return false;
-                    }
+                    if (cellList.get(i).figure != Figure.WHITE_M && cellList.get(i).figure != Figure.WHITE_K)
+                        able = true;
+                    else return false;
                 }
-                return f;
+                break;
         }
 
-        return false;
+        return able;
     }
 
-    // может ли фигура корректно совершить безобидный ход
     private boolean ableToMove(List<Cell> cellList){
-        if (cellList == null)
-            return false;
+        if (cellList == null) return false;
 
         Cell first = cellList.get(0);
         Cell last = cellList.get(cellList.size()-1);
 
-        if (last.figure != Figure.MISSING)
-            return false;
-
-        if (figureThatMustBeat != null && !figureThatMustBeat.equals(first))
-            return false;
+        // ход совершается не на пустую клетку -> false
+        if (last.figure != Figure.MISSING) return false;
+        // какая-то фигура должна бить, а ею ходят -> false
+        if (figureThatMustBeat != null && !figureThatMustBeat.equals(first)) return false;
 
         if (figureThatMustBeat == null) {
-            switch (first.figure){
-                case WHITE_M:
-                    if (last.row - first.row < 0) return false;
-                    break;
-                case BLACK_M:
-                    if (last.row - first.row > 0) return false;
-                    break;
-            }
-            if (turn == Turn.WHITE){
-                if (first.figure != Figure.WHITE_M && first.figure != Figure.WHITE_K)
-                    return false;
-                switch (first.figure){
-                    case WHITE_M:
-                        if (cellList.size() != 2)
-                            return false;
-                        break;
-                    case WHITE_K:
-                        for (int i = 1; i < cellList.size()-1; i++)
-                            if (cellList.get(i).figure != Figure.MISSING)
-                                return false;
-                        break;
-                }
-            } else if (turn == Turn.BLACK){
-                if (first.figure != Figure.BLACK_M && first.figure != Figure.BLACK_K)
-                    return false;
-                switch (first.figure){
-                    case BLACK_M:
-                        if (cellList.size() != 2)
-                            return false;
-                        break;
-                    case BLACK_K:
-                        for (int i = 1; i < cellList.size()-1; i++)
-                            if (cellList.get(i).figure != Figure.MISSING)
-                                return false;
-                        break;
-                }
+
+            if (first.figure == Figure.WHITE_M) {
+                if (last.row - first.row < 0) return false;
+            } else if (first.figure == Figure.BLACK_M) {
+                if (last.row - first.row > 0) return false;
+            } // если шашка ходит не в нужную сторону -> false
+
+            if (turn == Turn.WHITE && first.figure != Figure.WHITE_M && first.figure != Figure.WHITE_K)
+                return false; // если ход белыми фигурами и первая фигура НЕ белая
+            if (turn == Turn.BLACK && first.figure != Figure.BLACK_M && first.figure != Figure.BLACK_K)
+                return false; // если ход черными фигурами и первая фигура НЕ черная
+
+            if ((first.figure == Figure.WHITE_M || first.figure == Figure.BLACK_M) && cellList.size() != 2)
+                return false; // если простая шашка перемещается НЕ на одну клетку
+            if (first.figure == Figure.WHITE_K || first.figure == Figure.BLACK_K) {
+                for (int i = 1; i < cellList.size() - 1; i++)
+                    if (cellList.get(i).figure != Figure.MISSING)
+                        return false; // если между исходной и новой клеткой попадутся фигуры
             }
         }
+
         return true;
     }
 
-    // удаление фигур на участке (cell1 : cell2) не включительно
     private void deleteFigureBetween(Cell cell1, Cell cell2) {
         List<Cell> temp = listOfCells(cell1, cell2);
         assert temp != null;
@@ -313,73 +269,51 @@ public class Field{
         return move(cell1, cell2);
     }
 
-    // совершение любого действия фигурой
-    // (в идеале) возвращает:
-    //      пустую строку в случае удачного действия
-    //      blackWin / whiteWin в случае завершающего игру хода
-    //      пояснение в случае неудачного действия
     Pair<String, Integer> move(Cell cell1, Cell cell2) {
 
-        boolean mustBeat = false;       // обязан ли игрок бить
-        boolean beatingMove = false;    // ход с битьем
+        boolean mustBeat = false;       // true, если должен быть ход с битьем
+        boolean beatingMove = false;    // true, если этот ход с битьем
 
         int points = 0;
 
-        // если есть фигура, которая должна бить, но действие совершается не ею - возвращает строку
+        // если есть фигура, которая должна бить, но действие совершается не ею, ход не совершается
         if (figureThatMustBeat != null){
-            if (!figureThatMustBeat.equals(cell1))
-                return new Pair<>("Нужно бить прошлой фигурой", 0);
-            else
-                mustBeat = true;
-        } // проверяет поле на наличие фигуры (того же цвета, что и совершает ход)
-          // которая обязана совершить ход с битьем (теоретически: "иначе ее возьмут за фук")
-        else switch (turn){
-            case WHITE:
-                for (int i = 0; i < 8; i++){
-                    for (int j = 0; j < 8; j++){
-                        if ((cells[i][j].figure == Figure.WHITE_M || cells[i][j].figure == Figure.WHITE_K)
-                                && ableForBeating(cells[i][j])){
-                            mustBeat = true;
-                            break;
-                        }
-                        if (mustBeat) break;
+            if (!figureThatMustBeat.equals(cell1)) return new Pair<>("Нужно бить прошлой фигурой", 0);
+            else mustBeat = true;
+        }
+        /* иначе проверяет поле на наличие фигуры (того же цвета, что и совершает ход),
+           которая обязана совершить ход с битьем (теоретически: "иначе ее возьмут за фук") */
+        else {
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    if (ableForBeating(cells[i][j])) {
+                        mustBeat = true;
+                        break;
                     }
                 }
-                break;
-            case BLACK:
-                for (int i = 0; i < 8; i++){
-                    for (int j = 0; j < 8; j++){
-                        if ((cells[i][j].figure == Figure.BLACK_M || cells[i][j].figure == Figure.BLACK_K)
-                                && ableForBeating(cells[i][j])){
-                            mustBeat = true;
-                            break;
-                        }
-                        if (mustBeat) break;
-                    }
-                }
-                break;
+                if (mustBeat) break;
+            }
         }
 
         List<Cell> list = listOfCells(cell1, cell2);    // шашки между [cell1:cell2]
         if (ableForBeating(list, Control.DEFAULT))      // если ход с битьем
             beatingMove = true;
 
-        if (mustBeat && !beatingMove){  // игрок может бить ТЕОРЕТИЧЕСКИ, но не бьет
-            if (figureThatMustBeat != null)
-                return new Pair<>("Этой фигурой нужно бить, а не ходить", 0);
-            else
-                return new Pair<>("Нужно бить, а не ходить", 0);
+        if (mustBeat && !beatingMove){  // если игрок может бить ТЕОРЕТИЧЕСКИ, но не бьет
+            if (figureThatMustBeat != null) return new Pair<>("Этой фигурой нужно бить, а не ходить", 0);
+            else return new Pair<>("Нужно бить, а не ходить", 0);
         }
-        if (!mustBeat && beatingMove)   // игрок не может сходить битьем ТЕОРЕТИЧЕСКИ, но бьет ПРАКТИЧЕСКИ
-            return new Pair<>("ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ", 0);
-        if (!beatingMove && !ableToMove(list))  // игрок не бьет, но ходит некорректно
+
+        // если игрок не может сходить битьем ТЕОРЕТИЧЕСКИ, но бьет ПРАКТИЧЕСКИ
+        if (!mustBeat && beatingMove) return new Pair<>("ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ", 0);
+        // если игрок не бьет, но ходит некорректно
+        if (!beatingMove && !ableToMove(list)) return new Pair<>("Неверный ход", 0);
+        // если дамка бьет неправильно
+        if (beatingMove && (cell1.figure == Figure.WHITE_K || cell1.figure == Figure.BLACK_K) && !ableToBeat(list))
             return new Pair<>("Неверный ход", 0);
 
-        if (beatingMove && (cell1.figure == Figure.WHITE_K || cell1.figure == Figure.BLACK_K)
-                && !ableToBeat(list))   // дамка бьет неправильно
-            return new Pair<>("Неверный ход", 0);
 
-        if (beatingMove) deleteFigureBetween(cell1, cell2);     // все проверки пройдены, смахиваем фигуры с поля
+        if (beatingMove) deleteFigureBetween(cell1, cell2);     // если все проверки пройдены, смахиваем фигуры с поля
         cells[cell2.column][cell2.row].figure = cell1.figure;
         cells[cell1.column][cell1.row].figure = Figure.MISSING;
 
@@ -398,7 +332,6 @@ public class Field{
         return new Pair<>(totals, points);
     }
 
-    // ряд фигур [cell1, cell2]
     private List<Cell> listOfCells(Cell cell1, Cell cell2) {
 
         if (cell1.getFigure() == Figure.MISSING)

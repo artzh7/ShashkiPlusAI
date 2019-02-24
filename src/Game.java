@@ -57,9 +57,6 @@ public class Game extends Application {
         // bottom - вывод сообщения GameMessage
         // center - само поле GridPane
 
-        field.setFTMB(field.cell("d4"));
-        String path = "src/input/field2.txt";
-        field.setCells(path);
         field.setPlayer(PlayerWindow.display());   // окно с выбором цвета фигур
 
         HBox top = new HBox(10);
