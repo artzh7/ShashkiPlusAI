@@ -1,5 +1,11 @@
+import kotlin.Pair;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 public class Field{
 
@@ -52,7 +58,7 @@ public class Field{
         return sb.toString();
     }
 
-    private Cell cell(String pos){
+    Cell cell(String pos){
         String position = pos.toUpperCase();
         int column = (int) position.charAt(0) - 65;
         int row = (int) position.charAt(1) - 49;
@@ -109,7 +115,7 @@ public class Field{
     }
 
     static final String blackWin = "Игра окончена! Выиграли черные фигуры";
-    static final String whiteWin = "Игра окончена! Выиграли черные фигуры";
+    static final String whiteWin = "Игра окончена! Выиграли белые фигуры";
 
     // может ли фигура бить
     private boolean ableForBeating(Cell cell) {
@@ -301,7 +307,7 @@ public class Field{
         }
     }
 
-    public String move(String pos1, String pos2) {
+    public Pair<String, Integer> move(String pos1, String pos2) {
         Cell cell1 = cell(pos1);
         Cell cell2 = cell(pos2);
         return move(cell1, cell2);
@@ -312,15 +318,17 @@ public class Field{
     //      пустую строку в случае удачного действия
     //      blackWin / whiteWin в случае завершающего игру хода
     //      пояснение в случае неудачного действия
-    String move(Cell cell1, Cell cell2) {
+    Pair<String, Integer> move(Cell cell1, Cell cell2) {
 
         boolean mustBeat = false;       // обязан ли игрок бить
         boolean beatingMove = false;    // ход с битьем
 
+        int points = 0;
+
         // если есть фигура, которая должна бить, но действие совершается не ею - возвращает строку
         if (figureThatMustBeat != null){
             if (!figureThatMustBeat.equals(cell1))
-                return "Нужно бить прошлой фигурой";
+                return new Pair<>("Нужно бить прошлой фигурой", 0);
             else
                 mustBeat = true;
         } // проверяет поле на наличие фигуры (того же цвета, что и совершает ход)
@@ -358,16 +366,20 @@ public class Field{
 
         if (mustBeat && !beatingMove){  // игрок может бить ТЕОРЕТИЧЕСКИ, но не бьет
             if (figureThatMustBeat != null)
-                return "Этой фигурой нужно бить, а не ходить";
+                return new Pair<>("Этой фигурой нужно бить, а не ходить", 0);
             else
-                return "Нужно бить, а не ходить";
+                return new Pair<>("Нужно бить, а не ходить", 0);
         }
         if (!mustBeat && beatingMove)   // игрок не может сходить битьем ТЕОРЕТИЧЕСКИ, но бьет ПРАКТИЧЕСКИ
-            return "ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ";
+            return new Pair<>("ТАКОЕ НЕ МОГЛО ПРОИЗОЙТИ", 0);
         if (!beatingMove && !ableToMove(list))  // игрок не бьет, но ходит некорректно
-            return "Неверный ход";
+            return new Pair<>("Неверный ход", 0);
 
-        if (beatingMove) deleteFigureBetween(cell1, cell2);     // все проверки пройдены, смахиваем фигуру с поля
+        if (beatingMove && (cell1.figure == Figure.WHITE_K || cell1.figure == Figure.BLACK_K)
+                && !ableToBeat(list))   // дамка бьет неправильно
+            return new Pair<>("Неверный ход", 0);
+
+        if (beatingMove) deleteFigureBetween(cell1, cell2);     // все проверки пройдены, смахиваем фигуры с поля
         cells[cell2.column][cell2.row].figure = cell1.figure;
         cells[cell1.column][cell1.row].figure = Figure.MISSING;
 
@@ -383,13 +395,13 @@ public class Field{
             }
         } else changeTurn();
 
-        return totals;
+        return new Pair<>(totals, points);
     }
 
     // ряд фигур [cell1, cell2]
     private List<Cell> listOfCells(Cell cell1, Cell cell2) {
 
-        if (cell1.figure == Figure.MISSING)
+        if (cell1.getFigure() == Figure.MISSING)
             return null;
 
         if (cell1.column - cell1.row != cell2.column - cell2.row
@@ -434,21 +446,60 @@ public class Field{
     void setPlayer(Turn player) {
         this.player = player;
     }
-
     Turn getPlayer() {
         return player;
     }
-
     Turn getTurn() {
         return turn;
     }
-
     boolean gameIsOver() {
         return gameOver;
     }
-
     void setGameOver() {
         gameOver = true;
+    }
+    public void setFTMB(Cell fTMB) {
+        this.figureThatMustBeat = fTMB;
+    }
+
+    void setCells(String inputPath) throws FileNotFoundException {
+        File inputFile = new File(inputPath);
+        Scanner scanner = new Scanner(inputFile);
+
+        Cell[][] cells = new Cell[8][8];
+        int row = 7;
+        while (scanner.hasNextLine() || row >= 0) {
+            String line = null;
+            try {
+                 line = scanner.nextLine();
+            } catch (NoSuchElementException ignored){ }
+            for (int column = 0; column < 8; column++) {
+                if (line == null || line.length() <= column){
+                    cells[column][row] = new Cell(column, row, Figure.MISSING);
+                    continue;
+                }
+                switch (line.charAt(column)){
+                    case 'w':
+                        cells[column][row] = new Cell(column, row, Figure.WHITE_M);
+                        break;
+                    case 'W':
+                        cells[column][row] = new Cell(column, row, Figure.WHITE_K);
+                        break;
+                    case 'b':
+                        cells[column][row] = new Cell(column, row, Figure.BLACK_M);
+                        break;
+                    case 'B':
+                        cells[column][row] = new Cell(column, row, Figure.BLACK_K);
+                        break;
+                    case ' ':
+                        cells[column][row] = new Cell(column, row, Figure.MISSING);
+                        break;
+                }
+            }
+            row--;
+        }
+
+        this.cells = cells;
     }
 }
 
@@ -475,7 +526,7 @@ class Cell{
         }
     }
 
-    private Cell(int column, int row, Figure figure){
+    Cell(int column, int row, Figure figure){
         this.column = column;
         this.row = row;
         this.figure = figure;
@@ -511,7 +562,9 @@ class Cell{
         return new Cell(column, row, figure);
     }
 
-
+    public Figure getFigure() {
+        return figure;
+    }
 }
 
 enum Figure{

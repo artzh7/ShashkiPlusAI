@@ -7,8 +7,10 @@ import java.util.List;
 class Bot {
 
     private ArrayList<Branch> branches; // различные ветки ходов
+    private Turn botColor;
 
     Bot(Field startField, int depth) {
+        botColor = startField.getTurn();
         branches = buildFirstMoves(startField);
         completeMoves();
         for (int i = 0; i < depth; i++){
@@ -30,9 +32,9 @@ class Bot {
                             continue;
 
                         Field f = startField.copy();
-                        String message = f.move(f.cell(column1, row1), f.cell(column2, row2));
-                        if (message != null) {
-                            if (message.equals(Field.blackWin) || message.equals(Field.whiteWin)) {
+                        Pair<String, Integer> info = f.move(f.cell(column1, row1), f.cell(column2, row2));
+                        if (info.getFirst() != null) {
+                            if (info.getFirst().equals(Field.blackWin) || info.getFirst().equals(Field.whiteWin)) {
                                 finish = true;
                             } else continue;
                         }
@@ -45,6 +47,7 @@ class Bot {
                         if (!finish) branches1.add(branch);
                         else {
                             branches1 = new ArrayList<>();
+                            branch.setFinished();
                             branches1.add(branch);
                             break;
                         }
@@ -72,8 +75,8 @@ class Bot {
                     for (int column2 = 0; column2 < 8; column2++) {
 
                         Field f = branches.get(i).getLastField().copy();
-                        String message = f.move(f.cell(cell1.column, cell1.row), f.cell(column2, row2));
-                        if (message != null) {
+                        Pair<String, Integer> info = f.move(f.cell(cell1.column, cell1.row), f.cell(column2, row2));
+                        if (info.getFirst() != null) {
                             continue;
                         }
                         Triple<Cell, Cell, Field> leaf = new Triple<>(cell1, f.cell(column2, row2), f.copy());
@@ -114,9 +117,9 @@ class Bot {
                         for (int column2 = 0; column2 < 8; column2++) {
 
                             Field f = branches.get(i).getLastField().copy();
-                            String message = f.move(f.cell(column1, row1), f.cell(column2, row2));
-                            if (message != null) {
-                                if (!message.equals(Field.blackWin) && !message.equals(Field.whiteWin)) {
+                            Pair<String, Integer> info = f.move(f.cell(column1, row1), f.cell(column2, row2));
+                            if (info.getFirst() != null) {
+                                if (!info.getFirst().equals(Field.blackWin) && !info.getFirst().equals(Field.whiteWin)) {
                                     continue;
                                 }
                                 // else {                                                                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -144,8 +147,23 @@ class Bot {
         }
     }
 
-    // совершает случайный ход
-    String randomMove(Field field) {
+    private void setPointsOnBranches(Field startField){
+        for (Branch branch : branches) {
+            int points = 0;
+            Field temp = startField.copy();
+            for (Pair<Cell, Cell> currentMove : branch.getListOfMoves()){
+                Turn currentTurn = temp.copy().getTurn();
+                Pair<String, Integer> info = temp.move(currentMove.getFirst(), currentMove.getSecond());
+                if (currentTurn == botColor) {
+                    points += info.getSecond();
+                } else {
+                    points -= info.getSecond();
+                }
+            }
+        }
+    }
+
+    String randomMove1(Field field) {
         List<Pair<Cell, Cell>> moves = new ArrayList<>();
         boolean finish = false;
 
@@ -158,7 +176,7 @@ class Bot {
                             continue;
 
                         Field temp = field.copy();
-                        String message = temp.move(temp.cell(column1, row1), temp.cell(column2, row2));
+                        String message = temp.move(temp.cell(column1, row1), temp.cell(column2, row2)).getFirst();
                         if (message != null) {
                             if (message.equals(Field.blackWin) || message.equals(Field.whiteWin)) {
                                 moves.add(new Pair<>(field.cell(column1, row1), field.cell(column2, row2)));
@@ -181,9 +199,27 @@ class Bot {
             int i = (int) (Math.random() * moves.size());
             Pair<Cell, Cell> lastMove = moves.get(i);
             System.out.println(lastMove.getFirst().pos() + " -> " + lastMove.getSecond().pos());
-            return field.move(lastMove.getFirst(), lastMove.getSecond());
+            return field.move(lastMove.getFirst().pos(), lastMove.getSecond().pos()).getFirst();
         } else {
             switch (field.getPlayer()){
+                case WHITE:
+                    return Field.whiteWin;
+                case BLACK:
+                    return Field.blackWin;
+            }
+        }
+
+        return "";
+    }
+
+    String randomMove(Field field) {
+        if (!branches.isEmpty()) {
+            int i = (int) (Math.random() * branches.size());
+            Pair<Cell, Cell> lastMove = branches.get(i).getListOfMoves().get(0);
+            System.out.println(lastMove.getFirst().pos() + " -> " + lastMove.getSecond().pos());
+            return field.move(lastMove.getFirst().pos(), lastMove.getSecond().pos()).getFirst();
+        } else {
+            switch (field.getPlayer()) {
                 case WHITE:
                     return Field.whiteWin;
                 case BLACK:
@@ -212,22 +248,27 @@ class Branch{
         points = 0;
     }
 
+    ArrayList<Pair<Cell, Cell>> getListOfMoves() {
+        return listOfMoves;
+    }
+
     void setLastField(Field lastField) {
         this.lastField = lastField;
     }
-
     Field getLastField() {
         return lastField;
     }
 
-    ArrayList<Pair<Cell, Cell>> getListOfMoves() {
-        return listOfMoves;
+    public void setPoints(int points) {
+        this.points = points;
+    }
+    public int getPoints() {
+        return points;
     }
 
     public void setFinished(){
         finished = true;
     }
-
     boolean isFinished(){
         return finished;
     }

@@ -14,6 +14,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import kotlin.Pair;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -50,12 +51,15 @@ public class Game extends Application {
     }
 
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage primaryStage) throws FileNotFoundException {
 
         // top - кнопка "новая игра", текущий ход
         // bottom - вывод сообщения GameMessage
         // center - само поле GridPane
 
+        field.setFTMB(field.cell("d4"));
+        String path = "src/input/field2.txt";
+        field.setCells(path);
         field.setPlayer(PlayerWindow.display());   // окно с выбором цвета фигур
 
         HBox top = new HBox(10);
@@ -149,14 +153,14 @@ public class Game extends Application {
                             Cell cell1 = field.cell(first.column, first.row);
                             Cell cell2 = field.cell(second.column, second.row);
 
-                            String moveMessage = null;
+                            Pair<String, Integer> moveInfo = new Pair<>("", 0);
                             if (!field.gameIsOver())
-                                 moveMessage = field.move(cell1, cell2);
-                            if (moveMessage != null) {
-                                if (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin)){
+                                 moveInfo = field.move(cell1, cell2);
+                            if (moveInfo.getFirst() != null) {
+                                if (moveInfo.getFirst().equals(Field.blackWin) || moveInfo.getFirst().equals(Field.whiteWin)){
                                     field.setGameOver();
-                                    displayFinal(moveMessage);
-                                } else if (!moveMessage.isEmpty()) {
+                                    displayFinal(moveInfo.getFirst());
+                                } else if (!moveInfo.getFirst().isEmpty()) {
                                     message.setText("");
                                 }
                             } else message.setText("");
