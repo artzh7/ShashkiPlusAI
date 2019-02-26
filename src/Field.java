@@ -106,11 +106,11 @@ public class Field{
         for (int column = 0; column < 8; column++){
             if (cells[column][7].figure == Figure.WHITE_M) {
                 cells[column][7].figure = Figure.WHITE_K;
-                points += 150;
+                points += 500;
             }
             if (cells[column][0].figure == Figure.BLACK_M) {
                 cells[column][0].figure = Figure.BLACK_K;
-                points += 150;
+                points += 500;
             }
         }
         return points;
