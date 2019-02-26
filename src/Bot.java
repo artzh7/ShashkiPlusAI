@@ -167,7 +167,10 @@ class Bot {
 
     String smartMove(Field field) {
         Pair<String, String> smartMove = resultOfEvaluation(branches);
-        if (smartMove != null) return field.move(smartMove.getFirst(), smartMove.getSecond()).getFirst();
+        if (smartMove != null) {
+            System.out.println(smartMove.getFirst() + " -> " + smartMove.getSecond());
+            return field.move(smartMove.getFirst(), smartMove.getSecond()).getFirst();
+        }
         else {
             switch (field.getPlayer()) {
                 case WHITE:
