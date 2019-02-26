@@ -28,7 +28,7 @@ public class Field{
         this.turn = Turn.valueOf(turn.toString());
     }
 
-    Field(String inputPath) throws FileNotFoundException {
+    private Field(String inputPath) throws FileNotFoundException {
 
         File input = new File(inputPath);
         Scanner scanner = new Scanner(input);
@@ -101,13 +101,19 @@ public class Field{
         return cells[column][row];
     }
 
-    private void upgradeMen(){  // шашки в дамки
+    private int upgradeMen(){
+        int points = 0;
         for (int column = 0; column < 8; column++){
-            if (cells[column][7].figure == Figure.WHITE_M)
+            if (cells[column][7].figure == Figure.WHITE_M) {
                 cells[column][7].figure = Figure.WHITE_K;
-            if (cells[column][0].figure == Figure.BLACK_M)
+                points += 100;
+            }
+            if (cells[column][0].figure == Figure.BLACK_M) {
                 cells[column][0].figure = Figure.BLACK_K;
+                points += 100;
+            }
         }
+        return points;
     }
 
     private void changeTurn(){
@@ -304,13 +310,25 @@ public class Field{
         return true;
     }
 
-    private void deleteFigureBetween(Cell cell1, Cell cell2) {
+    private int deleteFigureBetween(Cell cell1, Cell cell2) {
         List<Cell> temp = listOfCells(cell1, cell2);
         assert temp != null;
+        int points = 0;
         for (int i = 1; i < temp.size()-1; i++){
             Cell c = temp.get(i);
+            switch (c.figure){
+                case WHITE_K:
+                case BLACK_K:
+                    points += 150;
+                    break;
+                case WHITE_M:
+                case BLACK_M:
+                    points += 50;
+                    break;
+            }
             cells[c.column][c.row].figure = Figure.MISSING;
         }
+        return points;
     }
 
     Pair<String, Integer> move(String pos1, String pos2) {
@@ -363,12 +381,15 @@ public class Field{
             return new Pair<>("Неверный ход", 0);
 
 
-        if (beatingMove) deleteFigureBetween(cell1, cell2);     // если все проверки пройдены, смахиваем фигуры с поля
+        if (beatingMove)
+            points += deleteFigureBetween(cell1, cell2);     // если все проверки пройдены, смахиваем фигуры с поля
         cells[cell2.column][cell2.row].figure = cell1.figure;
         cells[cell1.column][cell1.row].figure = Figure.MISSING;
 
-        upgradeMen();
+        points += upgradeMen();
         String totals = gameOver();
+        if (totals != null && (totals.equals(Field.whiteWin) || totals.equals(Field.blackWin)))
+            points += 300;
 
         // если был ход с битьем, смотрим, нужно ли менять ход
         if (beatingMove){
@@ -444,12 +465,12 @@ public class Field{
     void setGameOver() {
         gameOver = true;
     }
-    public void setFTMB(Cell fTMB) {
-        this.figureThatMustBeat = fTMB;
-    }
-    public Cell getFTMB() {
-        return figureThatMustBeat;
-    }
+//    public void setFTMB(Cell fTMB) {
+//        this.figureThatMustBeat = fTMB;
+//    }
+//    public Cell getFTMB() {
+//        return figureThatMustBeat;
+//    }
 }
 
 class Cell{

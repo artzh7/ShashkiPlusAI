@@ -160,7 +160,9 @@ public class Game extends Application {
                                 } else if (!moveInfo.getFirst().isEmpty()) {
                                     message.setText("");
                                 }
-                            } else message.setText("");
+                            } else {
+                                message.setText("");
+                            }
 
                             first = null;
                             second = null;
@@ -191,11 +193,11 @@ public class Game extends Application {
         }
         layout.setCenter(center);
 
-        // ------> рандомный ход (to be continued) <------
+        // ------> умный ход <------
         String moveMessage;
         if (field.getTurn() != field.getPlayer() && !field.gameIsOver()){
             Bot bot = new Bot(field, 2);
-            moveMessage = bot.randomMove(field);
+            moveMessage = bot.smartMove(field);
             if (moveMessage != null && (moveMessage.equals(Field.blackWin) || moveMessage.equals(Field.whiteWin))) {
                 field.setGameOver();
                 displayFinal(moveMessage);
