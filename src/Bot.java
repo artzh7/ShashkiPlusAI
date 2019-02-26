@@ -2,11 +2,12 @@ import kotlin.Pair;
 import kotlin.Triple;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 class Bot {
 
-    private ArrayList<Branch> branches; // различные ветки ходов
+    private LinkedList<Branch> branches; // различные ветки ходов
     private Turn botColor;
 
     Bot(Field startField, int depth) {
@@ -19,8 +20,8 @@ class Bot {
         }
     }
 
-    private ArrayList<Branch> buildFirstMoves(Field startField){
-        ArrayList<Branch> branches1 = new ArrayList<>();
+    private LinkedList<Branch> buildFirstMoves(Field startField){
+        LinkedList<Branch> branches1 = new LinkedList<>();
         boolean finish = false;
 
         for (int row1 = 0; row1 < 8; row1++) {
@@ -46,7 +47,7 @@ class Bot {
 
                         if (!finish) branches1.add(branch);
                         else {
-                            branches1 = new ArrayList<>();
+                            branches1 = new LinkedList<>();
                             branch.setFinished();
                             branches1.add(branch);
                             break;
@@ -62,7 +63,7 @@ class Bot {
         return branches1;
     }
 
-    private void completeMoves(){
+    void completeMoves(){
         for (;;){
             int changes = 0;
             int i = 0;
@@ -104,7 +105,7 @@ class Bot {
         }
     }
 
-    private void buildAnotherMoves(){
+    void buildAnotherMoves(){
         int i = 0;
         for (; i < branches.size(); i++){
 
@@ -230,7 +231,7 @@ class Bot {
         return "";
     }
 
-    ArrayList<Branch> getBranches() {
+    LinkedList<Branch> getBranches() {
         return branches;
     }
 }

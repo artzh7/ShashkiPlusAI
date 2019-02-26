@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class Field{
@@ -27,6 +26,39 @@ public class Field{
         System.arraycopy(cells, 0, this.cells, 0, 8);
         this.figureThatMustBeat = fTMB;
         this.turn = Turn.valueOf(turn.toString());
+    }
+
+    Field(String inputPath) throws FileNotFoundException {
+
+        File input = new File(inputPath);
+        Scanner scanner = new Scanner(input);
+
+        Cell[][] cells1 = new Cell[8][8];
+        int row = 7;
+        while (scanner.hasNextLine() && row >= 0){
+            String line = scanner.nextLine();
+            for (int column = 0; column < 8; column++){
+                switch (line.charAt(column)){
+                    case 'w':
+                        cells1[column][row] = new Cell(column, row, Figure.WHITE_M);
+                        break;
+                    case 'W':
+                        cells1[column][row] = new Cell(column, row, Figure.WHITE_K);
+                        break;
+                    case 'b':
+                        cells1[column][row] = new Cell(column, row, Figure.BLACK_M);
+                        break;
+                    case 'B':
+                        cells1[column][row] = new Cell(column, row, Figure.BLACK_K);
+                        break;
+                    case '.':
+                        cells1[column][row] = new Cell(column, row, Figure.MISSING);
+                        break;
+                }
+            }
+            row--;
+        }
+        cells = cells1;
     }
 
     @Override
@@ -197,25 +229,43 @@ public class Field{
                 return false;
         }
 
-        boolean able = false;
+        boolean exists = false;
         switch (cellList.get(0).figure){
             case WHITE_K:
                 for (int i = 1; i < cellList.size()-1; i++){
-                    if (cellList.get(i).figure != Figure.WHITE_M && cellList.get(i).figure != Figure.WHITE_K)
-                        able = true;
-                    else return false;
+                    if (cellList.get(i).figure == Figure.BLACK_M || cellList.get(i).figure == Figure.BLACK_K){
+                        exists = true;
+                        break;
+                    }
                 }
                 break;
             case BLACK_K:
                 for (int i = 1; i < cellList.size()-1; i++){
-                    if (cellList.get(i).figure != Figure.WHITE_M && cellList.get(i).figure != Figure.WHITE_K)
-                        able = true;
-                    else return false;
+                    if (cellList.get(i).figure == Figure.WHITE_M || cellList.get(i).figure == Figure.WHITE_K){
+                        exists = true;
+                        break;
+                    }
+                }
+                break;
+        }
+        if (!exists) return false;
+
+        switch (cellList.get(0).figure){
+            case WHITE_K:
+                for (int i = 1; i < cellList.size()-1; i++){
+                    if (!(cellList.get(i).figure != Figure.WHITE_M && cellList.get(i).figure != Figure.WHITE_K))
+                        return false;
+                }
+                break;
+            case BLACK_K:
+                for (int i = 1; i < cellList.size()-1; i++){
+                    if (!(cellList.get(i).figure != Figure.BLACK_M && cellList.get(i).figure != Figure.BLACK_K))
+                        return false;
                 }
                 break;
         }
 
-        return able;
+        return true;
     }
 
     private boolean ableToMove(List<Cell> cellList){
@@ -263,7 +313,7 @@ public class Field{
         }
     }
 
-    public Pair<String, Integer> move(String pos1, String pos2) {
+    Pair<String, Integer> move(String pos1, String pos2) {
         Cell cell1 = cell(pos1);
         Cell cell2 = cell(pos2);
         return move(cell1, cell2);
@@ -385,6 +435,9 @@ public class Field{
     Turn getTurn() {
         return turn;
     }
+    void setTurn(Turn turn) {
+        this.turn = turn;
+    }
     boolean gameIsOver() {
         return gameOver;
     }
@@ -394,45 +447,8 @@ public class Field{
     public void setFTMB(Cell fTMB) {
         this.figureThatMustBeat = fTMB;
     }
-
-    void setCells(String inputPath) throws FileNotFoundException {
-        File inputFile = new File(inputPath);
-        Scanner scanner = new Scanner(inputFile);
-
-        Cell[][] cells = new Cell[8][8];
-        int row = 7;
-        while (scanner.hasNextLine() || row >= 0) {
-            String line = null;
-            try {
-                 line = scanner.nextLine();
-            } catch (NoSuchElementException ignored){ }
-            for (int column = 0; column < 8; column++) {
-                if (line == null || line.length() <= column){
-                    cells[column][row] = new Cell(column, row, Figure.MISSING);
-                    continue;
-                }
-                switch (line.charAt(column)){
-                    case 'w':
-                        cells[column][row] = new Cell(column, row, Figure.WHITE_M);
-                        break;
-                    case 'W':
-                        cells[column][row] = new Cell(column, row, Figure.WHITE_K);
-                        break;
-                    case 'b':
-                        cells[column][row] = new Cell(column, row, Figure.BLACK_M);
-                        break;
-                    case 'B':
-                        cells[column][row] = new Cell(column, row, Figure.BLACK_K);
-                        break;
-                    case ' ':
-                        cells[column][row] = new Cell(column, row, Figure.MISSING);
-                        break;
-                }
-            }
-            row--;
-        }
-
-        this.cells = cells;
+    public Cell getFTMB() {
+        return figureThatMustBeat;
     }
 }
 
@@ -495,7 +511,7 @@ class Cell{
         return new Cell(column, row, figure);
     }
 
-    public Figure getFigure() {
+    Figure getFigure() {
         return figure;
     }
 }
