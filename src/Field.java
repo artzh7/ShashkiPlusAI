@@ -28,7 +28,7 @@ public class Field{
         this.turn = Turn.valueOf(turn.toString());
     }
 
-    private Field(String inputPath) throws FileNotFoundException {
+    Field(String inputPath) throws FileNotFoundException {
 
         File input = new File(inputPath);
         Scanner scanner = new Scanner(input);
@@ -106,11 +106,11 @@ public class Field{
         for (int column = 0; column < 8; column++){
             if (cells[column][7].figure == Figure.WHITE_M) {
                 cells[column][7].figure = Figure.WHITE_K;
-                points += 100;
+                points += 150;
             }
             if (cells[column][0].figure == Figure.BLACK_M) {
                 cells[column][0].figure = Figure.BLACK_K;
-                points += 100;
+                points += 150;
             }
         }
         return points;
@@ -220,14 +220,23 @@ public class Field{
         if (cellList.get(cellList.size()-1).figure != Figure.MISSING) return false;
 
         switch (cellList.get(0).figure){
+            case WHITE_K:
+            case WHITE_M:
+                if (turn != Turn.WHITE) return false;
+                break;
+            case BLACK_K:
+            case BLACK_M:
+                if (turn != Turn.BLACK) return false;
+                break;
+        }
+
+        switch (cellList.get(0).figure){
             case WHITE_M:
                 return (cellList.get(1).figure == Figure.BLACK_M || cellList.get(1).figure == Figure.BLACK_K)
-                        && cellList.size() == 3
-                        && turn == Turn.WHITE;
+                        && cellList.size() == 3;
             case BLACK_M:
                 return (cellList.get(1).figure == Figure.WHITE_M || cellList.get(1).figure == Figure.WHITE_K)
-                        && cellList.size() == 3
-                        && turn == Turn.BLACK;
+                        && cellList.size() == 3;
         }
 
         for (int i = 1; i < cellList.size()-1; i++) {
@@ -319,7 +328,7 @@ public class Field{
             switch (c.figure){
                 case WHITE_K:
                 case BLACK_K:
-                    points += 150;
+                    points += 250;
                     break;
                 case WHITE_M:
                 case BLACK_M:
